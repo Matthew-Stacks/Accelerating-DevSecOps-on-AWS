@@ -44,10 +44,7 @@ def error_pages(overrides):
         try:
             response = await handler(request)
             override = overrides.get(response.status)
-            if override is None:
-                return response
-            else:
-                return await override(request, response)
+            return response if override is None else await override(request, response)
         except web.HTTPException as ex:
             override = overrides.get(ex.status)
             if override is None:
@@ -59,17 +56,11 @@ def error_pages(overrides):
 
 
 async def handle_40x(request, exc):
-    response = render_template('errors/40x.jinja2',
-                               request,
-                               {'error': exc})
-    return response
+    return render_template('errors/40x.jinja2', request, {'error': exc})
 
 
 async def handle_50x(request, exc):
-    response = render_template('errors/50x.jinja2',
-                               request,
-                               {'error': exc})
-    return response
+    return render_template('errors/50x.jinja2', request, {'error': exc})
 
 
 error_middleware = error_pages({

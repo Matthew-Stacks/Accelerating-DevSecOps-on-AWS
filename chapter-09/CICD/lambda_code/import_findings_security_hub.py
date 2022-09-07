@@ -40,33 +40,33 @@ def process_message(event):
         vul_level = "LOW"
         ##upload to S3 bucket.
         s3 = boto3.client('s3')
-        s3bucket = "pipeline-artifact-bucket-" + account_id
+        s3bucket = f"pipeline-artifact-bucket-{account_id}"
         key = f"reports/{event['reportType']}/{build_id}-{created_at}.json"
         s3.put_object(Bucket=s3bucket, Body=json.dumps(event), Key=key, ServerSideEncryption='aws:kms')
         report_url = f"https://s3.console.aws.amazon.com/s3/object/{s3bucket}/{key}?region={region}"
 
         if ( event['reportType'] == 'ECR' ):
             FINDING_TITLE = "AWS ECR StaticCode Analysis"
-            severity = 50            
+            severity = 50
             vuln_ct = event['report']['imageScanFindings']['findings']
             vuln_count = len(vuln_ct)
             count = 1
             title_list = []
             for i in range(vuln_count):
                 severity = event['report']['imageScanFindings']['findings'][i]['severity']
-                name = event['report']['imageScanFindings']['findings'][i]['name']
-                url = event['report']['imageScanFindings']['findings'][i]['uri']        
+                url = event['report']['imageScanFindings']['findings'][i]['uri']
                 if severity not in ['Negligible', 'Unknown', 'INFORMATIONAL']:
                     normalized_severity =  assign_normalized_severity(severity)
+                    name = event['report']['imageScanFindings']['findings'][i]['name']
                     finding_description = f"{count}---Name:{name}---Sevierity:{severity}---URL:{url}"
                     finding_id = f"{count}-{report_type.lower()}-{build_id}"
                     created_at = datetime.now(timezone.utc).isoformat()
                     count += 1
                     securityhub.import_finding_to_sh(count, account_id, region, created_at, source_repository, source_branch, source_commitid, build_id, report_url, finding_id, generator_id, normalized_severity, severity, finding_type, FINDING_TITLE, finding_description, BEST_PRACTICES_CFN)               
-                    
+
         elif ( event['reportType'] == 'SNYK' ):
-            FINDING_TITLE = "Snyk StaticCode Analysis" 
-            severity = 50            
+            FINDING_TITLE = "Snyk StaticCode Analysis"
+            severity = 50
             vuln_ct = event['report']['vulnerabilities']
             vuln_count = len(vuln_ct)
             print(f"alert count is {vuln_count}")
@@ -77,11 +77,11 @@ def process_message(event):
                 if title not in title_list:
                     title_list.append(title)
                     severity = event['report']['vulnerabilities'][i]['severity']
-                    packageName = event['report']['vulnerabilities'][i]['packageName']
-                    cvssScore = event['report']['vulnerabilities'][i]['cvssScore']
-                    nvdSeverity = event['report']['vulnerabilities'][i]['nvdSeverity']        
+                    nvdSeverity = event['report']['vulnerabilities'][i]['nvdSeverity']
                     if severity not in ['Negligible', 'Unknown']:
                         normalized_severity =  assign_normalized_severity(severity)
+                        packageName = event['report']['vulnerabilities'][i]['packageName']
+                        cvssScore = event['report']['vulnerabilities'][i]['cvssScore']
                         finding_description = f"{count}---Title:{title}---Package:{packageName}---Sevierity:{severity}---CVSSv3_Score:{cvssScore}"
                         finding_id = f"{count}-{report_type.lower()}-{build_id}"
                         created_at = datetime.now(timezone.utc).isoformat()
@@ -89,27 +89,27 @@ def process_message(event):
                         securityhub.import_finding_to_sh(count, account_id, region, created_at, source_repository, source_branch, source_commitid, build_id, report_url, finding_id, generator_id, normalized_severity, severity, finding_type, FINDING_TITLE, finding_description, BEST_PRACTICES_CFN)               
 
         elif ( event['reportType'] == 'ANCHORE' ): 
-            FINDING_TITLE = "Anchore StaticCode Analysis" 
-            severity = 50            
+            FINDING_TITLE = "Anchore StaticCode Analysis"
+            severity = 50
             vuln_ct = event['report']['vulnerabilities']
             vuln_count = len(vuln_ct)
             print(f"alert count is {vuln_count}")
             count = 1
             for i in range(vuln_count):
                 severity = event['report']['vulnerabilities'][i]['severity']
-                vuln = event['report']['vulnerabilities'][i]['vuln']
                 url = event['report']['vulnerabilities'][i]['url']
                 feed_group = event['report']['vulnerabilities'][i]['feed_group']
-                package = event['report']['vulnerabilities'][i]['package']
                 if severity not in ['Negligible', 'Unknown']:
                     normalized_severity =  assign_normalized_severity(severity)
+                    vuln = event['report']['vulnerabilities'][i]['vuln']
+                    package = event['report']['vulnerabilities'][i]['package']
                     finding_description = f"{count}---Package:{package}--- Vulnerability:{vuln}---Details:{url}"
                     print(f"finding description is: {finding_description}")
                     finding_id = f"{count}-{report_type.lower()}-{build_id}"
                     created_at = datetime.now(timezone.utc).isoformat()
                     count += 1
                     securityhub.import_finding_to_sh(count, account_id, region, created_at, source_repository, source_branch, source_commitid, build_id, report_url, finding_id, generator_id, normalized_severity, severity, finding_type, FINDING_TITLE, finding_description, BEST_PRACTICES_CFN)               
-               
+
         elif event['reportType'] == 'OWASP-Zap':  
             severity = 50
             vul_level = "LOW"
@@ -118,16 +118,16 @@ def process_message(event):
             alert_count = len(alert_ct)
             for alertno in range(alert_count):
                 risk_desc = event['report']['site'][0]['alerts'][alertno]['riskdesc']
-                severity = risk_desc[0:3]
-                normalized_severity =  assign_normalized_severity(severity)                                        
+                severity = risk_desc[:3]
+                normalized_severity =  assign_normalized_severity(severity)
                 instances = len(event['report']['site'][0]['alerts'][alertno]['instances'])
                 finding_description = f"{alertno}-Vulerability:{event['report']['site'][0]['alerts'][alertno]['alert']}-Total occurances of this issue:{instances}"
                 finding_id = f"{alertno}-{report_type.lower()}-{build_id}"
                 created_at = datetime.now(timezone.utc).isoformat()
                 securityhub.import_finding_to_sh(alertno, account_id, region, created_at, source_repository, source_branch, source_commitid, build_id, report_url, finding_id, generator_id, normalized_severity, severity, finding_type, FINDING_TITLE, finding_description, BEST_PRACTICES_OWASP)
         else:
-            print("Invalid report type was provided")        
-        return vul_level        
+            print("Invalid report type was provided")
+        return vul_level
     else:
         logger.error("Report type not supported:")
 
@@ -151,6 +151,6 @@ def lambda_handler(event, context):
         logger.info("Starting function")
         return process_message(event)
     except Exception as error:
-        logger.error("Error {}".format(error))
+        logger.error(f"Error {error}")
         raise
 
