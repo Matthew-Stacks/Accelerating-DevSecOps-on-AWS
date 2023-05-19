@@ -28,7 +28,7 @@ AGG_APP_URL = os.environ.get("AGG_APP_URL")
 if AGG_APP_URL is None:
     AGG_APP_URL="http://localhost:3000/catalogDetail"
 
-flask_app.logger.info('AGG_APP_URL is ' + str(AGG_APP_URL))
+flask_app.logger.info(f'AGG_APP_URL is {str(AGG_APP_URL)}')
 
 # Fix of returning swagger.json on HTTP
 @property
@@ -66,7 +66,7 @@ class Products(Resource):
         Returns a list of products
         """
         try:
-            flask_app.logger.info('AGG_APP_URL is ' + str(AGG_APP_URL))
+            flask_app.logger.info(f'AGG_APP_URL is {str(AGG_APP_URL)}')
             response = requests.get(str(AGG_APP_URL))
             content = response.json()
             flask_app.logger.info('Get-All Request succeeded')
@@ -75,10 +75,10 @@ class Products(Resource):
                 "details" : content
             }
         except KeyError as e:
-            flask_app.logger.error('Error 500 Could not retrieve information ' + e.__doc__ )
+            flask_app.logger.error(f'Error 500 Could not retrieve information {e.__doc__}')
             name_space.abort(500, e.__doc__, status = "Could not retrieve information", statusCode = "500")
         except Exception as e:
-            flask_app.logger.error('Error 400 Could not retrieve information ' + e.__doc__ )
+            flask_app.logger.error(f'Error 400 Could not retrieve information {e.__doc__}')
             name_space.abort(400, e.__doc__, status = "Could not retrieve information", statusCode = "400")
 
 @name_space.route('/ping')
@@ -94,20 +94,20 @@ class MainClass(Resource):
     def get(self, id=None):
         try:
             name = list_of_names[id]
-            flask_app.logger.info('AGG_APP_URL is ' + str(AGG_APP_URL))
+            flask_app.logger.info(f'AGG_APP_URL is {str(AGG_APP_URL)}')
             response = requests.get(str(AGG_APP_URL))
             content = response.json()
-            flask_app.logger.info('Get Request succeeded ' + list_of_names[id])
+            flask_app.logger.info(f'Get Request succeeded {list_of_names[id]}')
             return {
                 "status": "Product Details retrieved",
                 "name" : list_of_names[id],
                 "details" : content['details']
             }
         except KeyError as e:
-            flask_app.logger.error('Error 500 Could not retrieve information ' + e.__doc__ )
+            flask_app.logger.error(f'Error 500 Could not retrieve information {e.__doc__}')
             name_space.abort(500, e.__doc__, status = "Could not retrieve information", statusCode = "500")
         except Exception as e:
-            flask_app.logger.error('Error 400 Could not retrieve information ' + e.__doc__ )
+            flask_app.logger.error(f'Error 400 Could not retrieve information {e.__doc__}')
             name_space.abort(400, e.__doc__, status = "Could not retrieve information", statusCode = "400")
 
 
@@ -116,16 +116,16 @@ class MainClass(Resource):
     def post(self, id):
         try:
             list_of_names[id] = request.json['name']
-            flask_app.logger.info('Post Request succeeded ' + list_of_names[id])
+            flask_app.logger.info(f'Post Request succeeded {list_of_names[id]}')
             return {
                 "status": "New Product added to Product Catalog",
                 "name": list_of_names[id]
             }
         except KeyError as e:
-            flask_app.logger.error('Error 500 Could not retrieve information ' + e.__doc__ )
+            flask_app.logger.error(f'Error 500 Could not retrieve information {e.__doc__}')
             name_space.abort(500, e.__doc__, status = "Could not save information", statusCode = "500")
         except Exception as e:
-            flask_app.logger.error('Error 400 Could not retrieve information ' + e.__doc__ )
+            flask_app.logger.error(f'Error 400 Could not retrieve information {e.__doc__}')
             name_space.abort(400, e.__doc__, status = "Could not save information", statusCode = "400")
 
 if __name__ == '__main__':
