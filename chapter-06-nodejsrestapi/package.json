@@ -22,7 +22,7 @@
     "jade": "^1.11.0",
     "morgan": "^1.10.0",
     "mysql2": "^2.2.5",
-    "sequelize": "^6.3.5",
+    "sequelize": "^6.32.1",
     "sleep": "^6.3.0"
   },
   "devDependencies": {
